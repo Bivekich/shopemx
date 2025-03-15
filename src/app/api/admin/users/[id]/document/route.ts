@@ -8,7 +8,7 @@ import path from 'path';
 // GET - получение документа пользователя
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -25,7 +25,7 @@ export async function GET(
       );
     }
 
-    const userId = params.id;
+    const userId = (await params).id;
 
     // Проверяем, существует ли пользователь
     const targetUser = await prisma.user.findUnique({

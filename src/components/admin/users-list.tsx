@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import Image from 'next/image';
 
 // Типы для пользователей
 interface User {
@@ -419,10 +420,13 @@ export function UsersList() {
                   </div>
                 ) : userDocumentUrl ? (
                   <div className="border rounded-md p-2">
-                    <img
+                    <Image
                       src={userDocumentUrl}
                       alt="Документ пользователя"
                       className="max-h-[300px] object-contain mx-auto"
+                      width={500}
+                      height={300}
+                      style={{ objectFit: 'contain' }}
                     />
                   </div>
                 ) : (

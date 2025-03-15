@@ -15,6 +15,14 @@ fi
 echo "Копирование .env.production в .env..."
 cp .env.production .env
 
+# Проверка сборки проекта
+echo "Проверка сборки проекта..."
+./check-build.sh
+if [ $? -ne 0 ]; then
+  echo "Ошибка при проверке сборки. Деплой прерван."
+  exit 1
+fi
+
 # Проверка подключения к базе данных
 echo "Проверка подключения к внешней базе данных..."
 ./check-db-connection.sh

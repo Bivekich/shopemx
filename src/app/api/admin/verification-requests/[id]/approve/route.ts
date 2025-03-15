@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 // POST - одобрение заявки на подтверждение
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -22,7 +22,7 @@ export async function POST(
       );
     }
 
-    const requestId = params.id;
+    const requestId = (await params).id;
 
     // Проверяем существование заявки
     const verificationRequest = await prisma.verificationRequest.findUnique({

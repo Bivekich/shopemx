@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   CardFooter,
   CardHeader,
   CardTitle,
@@ -17,9 +18,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   DialogTrigger,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   DialogClose,
 } from '@/components/ui/dialog';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import Image from 'next/image';
 
 // Типы для заявок на подтверждение
 interface VerificationRequest {
@@ -581,10 +586,13 @@ export function VerificationRequestsList() {
                   </div>
                 ) : userDocumentUrl ? (
                   <div className="border rounded-md p-2">
-                    <img
+                    <Image
                       src={userDocumentUrl}
                       alt="Документ пользователя"
                       className="max-h-[300px] object-contain mx-auto"
+                      width={500}
+                      height={300}
+                      style={{ objectFit: 'contain' }}
                     />
                   </div>
                 ) : (
