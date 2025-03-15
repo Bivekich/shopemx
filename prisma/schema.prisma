@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(uuid())
+  phone             String             @unique
+  email             String             @unique
+  firstName         String
+  lastName          String
+  middleName        String?
+  password          String
+  role              UserRole           @default(USER)
+  isVerified        Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  verificationCodes VerificationCode[]
+  lastLoginIp       String?
+  lastLoginUserAgent String?
+  lastLoginAttempt  DateTime?
+  name              String?
+  emailVerified     DateTime?
+  image             String?
+  birthDate         DateTime?
+  passportSeries    String?
+  passportNumber    String?
+  passportCode      String?
+  passportIssueDate DateTime?
+  passportIssuedBy  String?
+  bankName          String?
+  bankBik           String?
+  bankAccount       String?
+  bankCorAccount    String?
+  useAlternativeDocument Boolean        @default(false)
+  alternativeDocument String?
+  verificationRequests VerificationRequest[]
+}
+
+model VerificationCode {
+  id           String             @id @default(uuid())
+  code         String
+  type         VerificationType
+  expiresAt    DateTime
+  createdAt    DateTime           @default(now())
+  status       VerificationStatus @default(PENDING)
+  userId       String
+  lastSentAt   DateTime           @default(now())
+  sendAttempts Int                @default(0)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum VerificationType {
+  EMAIL
+  SMS
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+}
+
+enum VerificationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model VerificationRequest {
+  id           String                   @id @default(uuid())
+  userId       String
+  status       VerificationRequestStatus @default(PENDING)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  reviewedAt   DateTime?
+  reviewedBy   String?
+  rejectionReason String?
+  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
