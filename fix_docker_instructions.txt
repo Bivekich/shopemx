@@ -1,3 +1,32 @@
+Инструкции по исправлению проблемы с Docker на сервере
+
+1. Проверьте текущий Dockerfile на сервере:
+   ```
+   cat Dockerfile | grep openssl
+   ```
+
+2. Если в выводе вы видите `openssl1.1-compat`, то необходимо исправить Dockerfile:
+   ```
+   nano Dockerfile
+   ```
+
+3. Найдите строку с `RUN apk add --no-cache libc6-compat openssl1.1-compat` и замените её на:
+   ```
+   RUN apk add --no-cache libc6-compat openssl
+   ```
+
+4. Сохраните файл (Ctrl+O, затем Enter, затем Ctrl+X).
+
+5. Запустите сборку и запуск контейнеров:
+   ```
+   docker-compose up -d --build
+   ```
+
+Альтернативный вариант:
+
+1. Создайте новый Dockerfile с правильным содержимым:
+   ```
+   cat > Dockerfile << 'EOL'
 FROM node:20-alpine AS base
 
 # Установка зависимостей для Prisma и других пакетов
@@ -52,3 +81,10 @@ EXPOSE 3000
 
 # Запуск приложения
 CMD ["node", "server.js"]
+EOL
+   ```
+
+2. Запустите сборку и запуск контейнеров:
+   ```
+   docker-compose up -d --build
+   ```
