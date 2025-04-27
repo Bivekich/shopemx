@@ -48,21 +48,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Неверный пароль' }, { status: 401 });
     }
 
-    // Сбрасываем флаг верификации пользователя, чтобы требовать верификацию при каждом входе
-    await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        isVerified: false,
-      },
-    });
-
-    // Генерируем токен и устанавливаем куки
+    // Генерируем токен для пользователя
     const token = generateToken(user.id);
     await setAuthCookie(token);
 
-    // Создаем и отправляем коды верификации
+    // Создаем и отправляем коды верификации для входа
     const emailVerificationCode = await createVerificationCode(
       user.id,
       VerificationType.EMAIL
@@ -87,7 +77,7 @@ export async function POST(request: Request) {
       ),
     ]);
 
-    // Перенаправляем на страницу верификации
+    // Всегда перенаправляем на страницу верификации при входе
     const verifyUrl = new URL(
       '/verify',
       process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'

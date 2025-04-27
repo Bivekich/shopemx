@@ -3,43 +3,46 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
-  id                String             @id @default(uuid())
-  phone             String             @unique
-  email             String             @unique
-  firstName         String
-  lastName          String
-  middleName        String?
-  password          String
-  role              UserRole           @default(USER)
-  isVerified        Boolean            @default(false)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  verificationCodes VerificationCode[]
-  lastLoginIp       String?
-  lastLoginUserAgent String?
-  lastLoginAttempt  DateTime?
-  name              String?
-  emailVerified     DateTime?
-  image             String?
-  birthDate         DateTime?
-  passportSeries    String?
-  passportNumber    String?
-  passportCode      String?
-  passportIssueDate DateTime?
-  passportIssuedBy  String?
-  bankName          String?
-  bankBik           String?
-  bankAccount       String?
-  bankCorAccount    String?
-  useAlternativeDocument Boolean        @default(false)
-  alternativeDocument String?
-  verificationRequests VerificationRequest[]
+  id                     String                @id @default(uuid())
+  phone                  String                @unique
+  email                  String                @unique
+  firstName              String
+  lastName               String
+  middleName             String?
+  password               String
+  role                   UserRole              @default(USER)
+  isVerified             Boolean               @default(false)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  lastLoginIp            String?
+  lastLoginUserAgent     String?
+  lastLoginAttempt       DateTime?
+  name                   String?
+  emailVerified          DateTime?
+  image                  String?
+  birthDate              DateTime?
+  passportSeries         String?
+  passportNumber         String?
+  passportCode           String?
+  passportIssueDate      DateTime?
+  passportIssuedBy       String?
+  bankName               String?
+  bankBik                String?
+  bankAccount            String?
+  bankCorAccount         String?
+  useAlternativeDocument Boolean               @default(false)
+  alternativeDocument    String?
+  verificationCodes      VerificationCode[]
+  verificationRequests   VerificationRequest[]
+  artworks               Artwork[]
+  sellOffers             SellOffer[]           @relation("SellerOffers")
+  buyOffers              SellOffer[]           @relation("BuyerOffers")
 }
 
 model VerificationCode {
@@ -77,13 +80,66 @@ enum VerificationRequestStatus {
 }
 
 model VerificationRequest {
-  id           String                   @id @default(uuid())
-  userId       String
-  status       VerificationRequestStatus @default(PENDING)
-  createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @updatedAt
-  reviewedAt   DateTime?
-  reviewedBy   String?
+  id              String                    @id @default(uuid())
+  userId          String
+  status          VerificationRequestStatus @default(PENDING)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  reviewedAt      DateTime?
+  reviewedBy      String?
   rejectionReason String?
-  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ContractType {
+  EXCLUSIVE_RIGHTS
+  LICENSE
+}
+
+enum LicenseType {
+  EXCLUSIVE
+  NON_EXCLUSIVE
+}
+
+model Artwork {
+  id          String      @id @default(uuid())
+  title       String
+  description String
+  filePath    String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  sellOffers  SellOffer[]
+}
+
+model SellOffer {
+  id                  String          @id @default(uuid())
+  price               Decimal?
+  isFree              Boolean         @default(false)
+  contractType        ContractType
+  licenseType         LicenseType?
+  isExclusive         Boolean?
+  isPerpetual         Boolean?
+  licenseDuration     Int?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  status              SellOfferStatus @default(PENDING)
+  artworkId           String
+  artwork             Artwork         @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  sellerId            String
+  seller              User            @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyerId             String?
+  buyer               User?           @relation("BuyerOffers", fields: [buyerId], references: [id])
+  contractPath        String?
+  confirmationCode    String?
+  confirmationExpires DateTime?
+}
+
+enum SellOfferStatus {
+  PENDING
+  ACTIVE
+  ACCEPTED
+  DECLINED
+  CANCELLED
 }

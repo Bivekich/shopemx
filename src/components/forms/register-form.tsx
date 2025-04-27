@@ -259,19 +259,19 @@ export function RegisterForm() {
                     </FormLabel>
                     <div className="text-sm text-muted-foreground">
                       <Link
-                        href="/documents/offer.pdf"
+                        href="/agree.pdf"
                         target="_blank"
                         className="text-primary hover:underline"
                       >
-                        Публичная оферта
+                        Пользовательское соглашение
                       </Link>
                       {', '}
                       <Link
-                        href="/documents/agreement.pdf"
+                        href="/public.pdf"
                         target="_blank"
                         className="text-primary hover:underline"
                       >
-                        Соглашение об использовании простой электронной подписи
+                        Условия покупки
                       </Link>
                     </div>
                   </div>

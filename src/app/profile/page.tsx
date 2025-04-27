@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { BankDetailsForm } from '@/components/profile/BankDetailsForm';
+import { SectionHeader } from '@/components/ui/section-header';
 import { redirect } from 'next/navigation';
 
 export default async function ProfilePage() {
@@ -21,6 +22,7 @@ export default async function ProfilePage() {
       middleName: true,
       email: true,
       phone: true,
+      birthDate: true,
       passportSeries: true,
       passportNumber: true,
       passportCode: true,
@@ -30,6 +32,8 @@ export default async function ProfilePage() {
       bankBik: true,
       bankAccount: true,
       bankCorAccount: true,
+      useAlternativeDocument: true,
+      alternativeDocument: true,
     },
   });
 
@@ -39,11 +43,14 @@ export default async function ProfilePage() {
         passportIssueDate: profile.passportIssueDate
           ?.toISOString()
           .split('T')[0],
+        birthDate: profile.birthDate?.toISOString().split('T')[0],
         middleName: profile.middleName || undefined,
         passportSeries: profile.passportSeries || undefined,
         passportNumber: profile.passportNumber || undefined,
         passportCode: profile.passportCode || undefined,
         passportIssuedBy: profile.passportIssuedBy || undefined,
+        useAlternativeDocument: profile.useAlternativeDocument || false,
+        alternativeDocument: profile.alternativeDocument || undefined,
       }
     : undefined;
 
@@ -60,15 +67,21 @@ export default async function ProfilePage() {
     <div className="container mx-auto py-8">
       <div className="max-w-2xl mx-auto space-y-8">
         <div>
-          <h1 className="text-2xl font-bold mb-6">Профиль пользователя</h1>
-          <div className="bg-white rounded-lg shadow p-6">
+          <SectionHeader
+            title="Профиль пользователя"
+            description="Основная информация о вас и ваших документах"
+          />
+          <div className="bg-white rounded-lg shadow p-6 mt-4">
             <ProfileForm initialData={formattedProfile} />
           </div>
         </div>
 
         <div>
-          <h2 className="text-xl font-bold mb-6">Банковские реквизиты</h2>
-          <div className="bg-white rounded-lg shadow p-6">
+          <SectionHeader
+            title="Банковские реквизиты"
+            description="Информация для получения денежных средств"
+          />
+          <div className="bg-white rounded-lg shadow p-6 mt-4">
             <BankDetailsForm initialData={bankDetails} />
           </div>
         </div>

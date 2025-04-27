@@ -82,6 +82,13 @@ export async function sendEmailVerificationCode(
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD,
       },
+      // Добавляем дополнительные настройки для предотвращения использования IP вместо домена
+      tls: {
+        // Отключаем проверку сертификата, если возникают проблемы с SSL
+        rejectUnauthorized: false,
+      },
+      // Принудительно используем доменное имя вместо IP
+      name: process.env.SMTP_HOST,
     });
 
     // Отправка email
@@ -228,6 +235,13 @@ export async function sendLoginNotification(
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD,
       },
+      // Добавляем дополнительные настройки для предотвращения использования IP вместо домена
+      tls: {
+        // Отключаем проверку сертификата, если возникают проблемы с SSL
+        rejectUnauthorized: false,
+      },
+      // Принудительно используем доменное имя вместо IP
+      name: process.env.SMTP_HOST,
     });
 
     // Отправка email

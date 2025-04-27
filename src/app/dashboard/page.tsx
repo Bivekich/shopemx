@@ -425,6 +425,37 @@ export default async function DashboardPage({
                 </Link>
               </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              <div className="bg-white p-6 rounded-lg border shadow-sm">
+                <h3 className="text-lg font-semibold mb-2">Мои покупки</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Просмотр всех купленных произведений
+                </p>
+                <Link href="/dashboard/transactions?tab=purchases">
+                  <Button variant="outline" className="w-full">
+                    Просмотреть покупки
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg border shadow-sm">
+                <h3 className="text-lg font-semibold mb-2">Мои продажи</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Просмотр всех проданных произведений
+                </p>
+                <div className="flex flex-col space-y-2">
+                  <Link href="/dashboard/transactions?tab=sales">
+                    <Button variant="outline" className="w-full">
+                      Просмотреть продажи
+                    </Button>
+                  </Link>
+                  <Link href="/sell">
+                    <Button className="w-full">Создать предложение</Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         );
     }
@@ -468,6 +499,20 @@ export default async function DashboardPage({
                 Главная
               </Link>
 
+              <Link
+                href="/sell"
+                className="block px-4 py-2 rounded-md hover:bg-gray-100"
+              >
+                Продать
+              </Link>
+
+              <Link
+                href="/buy"
+                className="block px-4 py-2 rounded-md hover:bg-gray-100"
+              >
+                Купить
+              </Link>
+
               <div className="mt-4 px-4 py-2 font-semibold text-sm text-muted-foreground">
                 Учетная запись
               </div>
@@ -500,6 +545,12 @@ export default async function DashboardPage({
                 }`}
               >
                 Банковские реквизиты
+              </Link>
+              <Link
+                href="/dashboard/transactions"
+                className="block px-4 py-2 rounded-md hover:bg-gray-100"
+              >
+                Мои транзакции
               </Link>
               <Link
                 href="/dashboard?section=change-password"

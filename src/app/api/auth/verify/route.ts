@@ -45,11 +45,10 @@ export async function POST(request: Request) {
     const ip = request.headers.get('x-forwarded-for') || 'Не определен';
     const userAgent = request.headers.get('user-agent') || 'Не определен';
 
-    // Обновляем статус верификации и информацию о входе
+    // Обновляем информацию о входе
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        isVerified: true,
         lastLoginIp: ip,
         lastLoginUserAgent: userAgent,
         lastLoginAttempt: new Date(),
