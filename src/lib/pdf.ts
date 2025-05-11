@@ -29,7 +29,7 @@ export async function createContractPdf(contractText: string): Promise<Buffer> {
 
     // Запускаем браузер и рендерим PDF
     const browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
@@ -42,7 +42,7 @@ export async function createContractPdf(contractText: string): Promise<Buffer> {
       });
 
       // Генерируем PDF
-      const pdfBuffer = await page.pdf({
+      await page.pdf({
         path: pdfPath,
         format: 'A4',
         margin: {
@@ -58,7 +58,7 @@ export async function createContractPdf(contractText: string): Promise<Buffer> {
       await browser.close();
 
       // Возвращаем содержимое PDF
-      return pdfBuffer;
+      return fs.readFileSync(pdfPath);
     } finally {
       // Закрываем браузер в любом случае
       await browser.close();
