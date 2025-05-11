@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { writeFile, mkdir, readFile } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(
   request: Request,
@@ -75,23 +72,6 @@ export async function POST(
       );
     }
 
-    // Генерируем договор для покупки
-    const contractFileName = `purchase_contract_${uuidv4()}.pdf`;
-    const contractsDir = join(process.cwd(), 'public', 'contracts');
-    const userContractsDir = join(contractsDir, user.id);
-
-    // Создаем директорию для хранения контрактов, если она не существует
-    await mkdir(userContractsDir, { recursive: true });
-
-    // Читаем шаблон PDF-файла
-    // В реальном проекте здесь будет использоваться библиотека для модификации PDF
-    // Сейчас просто копируем шаблон public.pdf
-    const templatePath = join(process.cwd(), 'public', 'public.pdf');
-    const templateContent = await readFile(templatePath);
-
-    // Сохраняем договор как PDF
-    await writeFile(join(userContractsDir, contractFileName), templateContent);
-
     // Обновляем статус предложения на COMPLETED и сохраняем путь к договору
     await prisma.sellOffer.update({
       where: {
@@ -99,14 +79,12 @@ export async function POST(
       },
       data: {
         status: 'ACCEPTED',
-        contractPath: `/contracts/${user.id}/${contractFileName}`,
       },
     });
 
     // Возвращаем успешный ответ с путем к договору
     return NextResponse.json({
       message: 'Покупка успешно подтверждена',
-      contractUrl: `/contracts/${user.id}/${contractFileName}`,
     });
   } catch (error) {
     console.error('Ошибка при подтверждении покупки:', error);

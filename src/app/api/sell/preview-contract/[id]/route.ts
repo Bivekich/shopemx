@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { uploadFile } from '@/lib/s3';
+import { createContractPdf } from '@/lib/pdf';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@prisma/client';
 
@@ -53,23 +53,24 @@ export async function GET(
     }
 
     // Генерируем договор для предварительного просмотра
-    const previewFileName = `preview_contract_${uuidv4()}.txt`;
-    const previewsDir = join(process.cwd(), 'public', 'contract_previews');
-    const userPreviewsDir = join(previewsDir, user.id);
+    const previewFileName = `preview_contract_${uuidv4()}.pdf`;
 
-    // Создаем директорию для хранения предварительных просмотров, если она не существует
-    await mkdir(userPreviewsDir, { recursive: true });
-
-    // Генерируем содержимое договора
+    // Генерируем содержимое договора в текстовом формате
     const contractContent = generateContractContent(sellOffer, user);
 
-    // Сохраняем предварительный просмотр как текстовый файл
-    await writeFile(join(userPreviewsDir, previewFileName), contractContent);
+    // Преобразуем текст в PDF
+    const pdfBuffer = await createContractPdf(contractContent);
+
+    // Определяем путь в S3
+    const s3Key = `contract_previews/${user.id}/${previewFileName}`;
+
+    // Загружаем предварительный просмотр договора в S3
+    const previewUrl = await uploadFile(s3Key, pdfBuffer, 'application/pdf');
 
     // Возвращаем успешный ответ с путем к предварительному просмотру
     return NextResponse.json({
       message: 'Предварительный просмотр договора сгенерирован',
-      previewUrl: `/contract_previews/${user.id}/${previewFileName}`,
+      previewUrl: previewUrl,
     });
   } catch (error) {
     console.error(
@@ -187,8 +188,8 @@ ${user.lastName} ${user.firstName} ${user.middleName || ''},
 
 Правообладатель:
 ${user.lastName} ${user.firstName} ${user.middleName || ''}
-Паспорт: ${user.passportSeries} ${user.passportNumber}
-Выдан: ${user.passportIssuedBy}, ${
+Паспорт: ${user.passportSeries || ''} ${user.passportNumber || ''}
+Выдан: ${user.passportIssuedBy || ''}, ${
     user.passportIssueDate
       ? new Date(user.passportIssueDate).toLocaleDateString('ru-RU')
       : ''

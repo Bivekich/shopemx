@@ -456,6 +456,22 @@ export default async function DashboardPage({
                 </div>
               </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mt-8">
+              <div className="bg-white p-6 rounded-lg border shadow-sm">
+                <h3 className="text-lg font-semibold mb-2">
+                  Управление задачами
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Создание и отслеживание личных задач
+                </p>
+                <Link href="/dashboard/todo">
+                  <Button variant="outline" className="w-full">
+                    Перейти к задачам
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         );
     }
@@ -551,6 +567,12 @@ export default async function DashboardPage({
                 className="block px-4 py-2 rounded-md hover:bg-gray-100"
               >
                 Мои транзакции
+              </Link>
+              <Link
+                href="/dashboard/todo"
+                className="block px-4 py-2 rounded-md hover:bg-gray-100"
+              >
+                Мои задачи
               </Link>
               <Link
                 href="/dashboard?section=change-password"

@@ -38,6 +38,7 @@ model User {
   bankCorAccount         String?
   useAlternativeDocument Boolean               @default(false)
   alternativeDocument    String?
+  passportDocumentUrl    String?
   verificationCodes      VerificationCode[]
   verificationRequests   VerificationRequest[]
   artworks               Artwork[]

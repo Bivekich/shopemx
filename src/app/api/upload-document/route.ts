@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { uploadFile } from '@/lib/s3';
 import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -40,36 +40,28 @@ export async function POST(request: Request) {
     const fileExtension = file.name.split('.').pop();
     const fileName = `${user.id}_passport_${uuidv4()}.${fileExtension}`;
 
-    // Создаем директорию для хранения документов пользователя, если она не существует
-    const userDocumentsDir = join(process.cwd(), 'public', 'uploads', user.id);
+    // Определяем путь в S3 хранилище
+    const s3Key = `uploads/${user.id}/${fileName}`;
 
-    try {
-      await writeFile(
-        join(userDocumentsDir, fileName),
-        Buffer.from(await file.arrayBuffer())
-      );
-    } catch (error) {
-      console.error('Ошибка при сохранении файла:', error);
+    // Загружаем файл в S3 хранилище
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const fileUrl = await uploadFile(s3Key, fileBuffer, file.type);
 
-      // Если директория не существует, создаем её
-      await mkdir(userDocumentsDir, { recursive: true });
-
-      // Пробуем сохранить файл снова
-      await writeFile(
-        join(userDocumentsDir, fileName),
-        Buffer.from(await file.arrayBuffer())
-      );
-    }
-
-    // Сохраняем информацию о документе в базе данных
-    // Здесь будет код для сохранения информации о документе в базе данных
-    // Например, с использованием Prisma
+    // Сохраняем URL документа в базе данных
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        passportDocumentUrl: fileUrl,
+      },
+    });
 
     // Возвращаем успешный ответ
     return NextResponse.json({
       message: 'Документ успешно загружен',
       fileName: fileName,
-      filePath: `/uploads/${user.id}/${fileName}`,
+      filePath: fileUrl,
     });
   } catch (error) {
     console.error('Ошибка при загрузке документа:', error);

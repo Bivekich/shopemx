@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
+import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
-import { existsSync } from 'fs';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
@@ -12,7 +13,24 @@ export async function GET() {
       return NextResponse.json({ message: 'Не авторизован' }, { status: 401 });
     }
 
-    // Путь к директории с документами пользователя
+    // Проверяем наличие URL документа в базе данных
+    const userWithDocument = await prisma.user.findUnique({
+      where: {
+        id: user.id,
+      },
+      select: {
+        passportDocumentUrl: true,
+      },
+    });
+
+    // Если есть URL документа в базе данных, возвращаем его
+    if (userWithDocument?.passportDocumentUrl) {
+      return NextResponse.json({
+        filePath: userWithDocument.passportDocumentUrl,
+      });
+    }
+
+    // Если в базе нет URL, ищем в локальном хранилище (для обратной совместимости)
     const userDocumentsDir = join(process.cwd(), 'public', 'uploads', user.id);
 
     // Проверяем, существует ли директория

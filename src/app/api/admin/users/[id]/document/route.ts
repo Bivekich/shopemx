@@ -32,6 +32,9 @@ export async function GET(
       where: {
         id: userId,
       },
+      select: {
+        passportDocumentUrl: true,
+      },
     });
 
     if (!targetUser) {
@@ -41,7 +44,14 @@ export async function GET(
       );
     }
 
-    // Путь к директории с документами пользователя
+    // Сначала проверяем наличие документа в S3 (новый способ)
+    if (targetUser.passportDocumentUrl) {
+      return NextResponse.json({
+        documentUrl: targetUser.passportDocumentUrl,
+      });
+    }
+
+    // Если документа нет в S3, ищем в локальном хранилище (старый способ)
     const userDocumentsDir = path.join(
       process.cwd(),
       'public',

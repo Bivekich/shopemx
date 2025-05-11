@@ -41,45 +41,50 @@ export async function POST() {
       );
     }
 
-    // Проверяем, загружен ли документ пользователя
-    const userDocumentsDir = path.join(
-      process.cwd(),
-      'public',
-      'uploads',
-      user.id
-    );
+    // Получаем данные пользователя с URL документа
+    const userData = await prisma.user.findUnique({
+      where: {
+        id: user.id,
+      },
+      select: {
+        passportDocumentUrl: true,
+      },
+    });
 
-    // Проверяем, существует ли директория с документами пользователя
-    if (!existsSync(userDocumentsDir)) {
+    let hasDocument = false;
+
+    // Проверяем, есть ли документ в S3 (новый способ)
+    if (userData?.passportDocumentUrl) {
+      hasDocument = true;
+    } else {
+      // Если нет URL в базе, проверяем локальное хранилище (старый способ)
+      const userDocumentsDir = path.join(
+        process.cwd(),
+        'public',
+        'uploads',
+        user.id
+      );
+
+      // Проверяем, существует ли директория с документами пользователя
+      if (existsSync(userDocumentsDir)) {
+        try {
+          const files = await readdir(userDocumentsDir);
+          const passportFile = files.find((file) => file.includes('passport'));
+          if (passportFile) {
+            hasDocument = true;
+          }
+        } catch (error) {
+          console.error('Ошибка при проверке документов:', error);
+        }
+      }
+    }
+
+    // Если документа нет ни в S3, ни в локальном хранилище, возвращаем ошибку
+    if (!hasDocument) {
       return NextResponse.json(
         {
           message:
             'Необходимо загрузить фото документа перед отправкой заявки на верификацию',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Проверяем наличие файлов в директории
-    try {
-      const files = await readdir(userDocumentsDir);
-      const passportFile = files.find((file) => file.includes('passport'));
-
-      if (!passportFile) {
-        return NextResponse.json(
-          {
-            message:
-              'Необходимо загрузить фото документа перед отправкой заявки на верификацию',
-          },
-          { status: 400 }
-        );
-      }
-    } catch (error) {
-      console.error('Ошибка при проверке документов:', error);
-      return NextResponse.json(
-        {
-          message:
-            'Ошибка при проверке документов. Пожалуйста, загрузите документ повторно',
         },
         { status: 400 }
       );

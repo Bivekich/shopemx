@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { uploadFile } from '@/lib/s3';
+import { createContractPdf } from '@/lib/pdf';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(
@@ -53,11 +53,6 @@ export async function POST(
 
     // Генерируем договор
     const contractFileName = `contract_${uuidv4()}.pdf`;
-    const contractsDir = join(process.cwd(), 'public', 'contracts');
-    const userContractsDir = join(contractsDir, user.id);
-
-    // Создаем директорию для хранения договоров, если она не существует
-    await mkdir(userContractsDir, { recursive: true });
 
     // Преобразуем Decimal в строку перед передачей в функцию генерации договора
     const sellOfferForContract = {
@@ -65,12 +60,17 @@ export async function POST(
       price: sellOffer.price ? sellOffer.price.toString() : null,
     };
 
-    // Генерируем содержимое договора (пока просто шаблон)
+    // Генерируем содержимое договора в текстовом формате
     const contractContent = generateContractContent(sellOfferForContract, user);
 
-    // Сохраняем договор как PDF (в реальности здесь будет использоваться библиотека для создания PDF)
-    // Здесь используем текстовый файл как временное решение
-    await writeFile(join(userContractsDir, contractFileName), contractContent);
+    // Преобразуем текст в PDF
+    const pdfBuffer = await createContractPdf(contractContent);
+
+    // Определяем путь в S3
+    const s3Key = `contracts/${user.id}/${contractFileName}`;
+
+    // Загружаем договор в S3
+    const contractUrl = await uploadFile(s3Key, pdfBuffer, 'application/pdf');
 
     // Обновляем статус предложения на "активное" и сохраняем путь к договору
     await prisma.sellOffer.update({
@@ -79,7 +79,7 @@ export async function POST(
       },
       data: {
         status: 'ACTIVE',
-        contractPath: `/contracts/${user.id}/${contractFileName}`,
+        contractPath: contractUrl,
       },
     });
 
@@ -89,7 +89,7 @@ export async function POST(
     // Возвращаем успешный ответ с путем к договору
     return NextResponse.json({
       message: 'Предложение успешно подтверждено',
-      contractUrl: `/contracts/${user.id}/${contractFileName}`,
+      contractUrl: contractUrl,
     });
   } catch (error) {
     console.error('Ошибка при подтверждении предложения:', error);
@@ -204,8 +204,8 @@ ${user.lastName} ${user.firstName} ${user.middleName || ''},
 
 Правообладатель:
 ${user.lastName} ${user.firstName} ${user.middleName || ''}
-Паспорт: ${user.passportSeries} ${user.passportNumber}
-Выдан: ${user.passportIssuedBy}, ${
+Паспорт: ${user.passportSeries || ''} ${user.passportNumber || ''}
+Выдан: ${user.passportIssuedBy || ''}, ${
     user.passportIssueDate
       ? new Date(user.passportIssueDate).toLocaleDateString('ru-RU')
       : ''

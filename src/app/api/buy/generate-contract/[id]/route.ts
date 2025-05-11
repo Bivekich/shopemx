@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { writeFile, mkdir, readFile } from 'fs/promises';
-import { join } from 'path';
+import { uploadFile } from '@/lib/s3';
+import { createContractPdf } from '@/lib/pdf';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(
@@ -58,20 +58,48 @@ export async function GET(
 
     // Генерируем договор для покупки
     const contractFileName = `purchase_contract_${uuidv4()}.pdf`;
-    const contractsDir = join(process.cwd(), 'public', 'contracts');
-    const userContractsDir = join(contractsDir, user.id);
 
-    // Создаем директорию для хранения контрактов, если она не существует
-    await mkdir(userContractsDir, { recursive: true });
+    // Создаем текстовый шаблон договора
+    const contractContent = `
+====================================================
+ДОГОВОР КУПЛИ-ПРОДАЖИ ИНТЕЛЛЕКТУАЛЬНОЙ СОБСТВЕННОСТИ
+====================================================
 
-    // Читаем шаблон PDF-файла
-    // В реальном проекте здесь будет использоваться библиотека для модификации PDF
-    // Сейчас просто копируем шаблон public.pdf
-    const templatePath = join(process.cwd(), 'public', 'public.pdf');
-    const templateContent = await readFile(templatePath);
+г. Москва                                ${new Date().toLocaleDateString(
+      'ru-RU'
+    )}
 
-    // Сохраняем договор как PDF
-    await writeFile(join(userContractsDir, contractFileName), templateContent);
+${sellOffer.artwork.author.lastName} ${sellOffer.artwork.author.firstName} ${
+      sellOffer.artwork.author.middleName || ''
+    },
+именуемый в дальнейшем "Продавец", с одной стороны,
+и ${user.lastName} ${user.firstName} ${user.middleName || ''},
+именуемый в дальнейшем "Покупатель", с другой стороны,
+заключили настоящий Договор о нижеследующем:
+
+1. ПРЕДМЕТ ДОГОВОРА
+
+1.1. Продавец передает Покупателю права на произведение:
+Название: ${sellOffer.artwork.title}
+Описание: ${sellOffer.artwork.description}
+
+2. УСЛОВИЯ ДОГОВОРА
+
+2.1. Стоимость передачи прав: ${
+      sellOffer.isFree
+        ? 'Безвозмездно'
+        : `${sellOffer.price ? sellOffer.price.toString() : '0'} руб.`
+    }
+`;
+
+    // Преобразуем текст в PDF
+    const pdfBuffer = await createContractPdf(contractContent);
+
+    // Определяем путь в S3
+    const s3Key = `contracts/${user.id}/${contractFileName}`;
+
+    // Загружаем контракт в S3
+    const contractUrl = await uploadFile(s3Key, pdfBuffer, 'application/pdf');
 
     // Обновляем информацию о контракте в базе данных
     await prisma.sellOffer.update({
@@ -79,14 +107,14 @@ export async function GET(
         id: id,
       },
       data: {
-        contractPath: `/contracts/${user.id}/${contractFileName}`,
+        contractPath: contractUrl,
       },
     });
 
     // Возвращаем успешный ответ с путем к контракту
     return NextResponse.json({
       message: 'Контракт успешно сгенерирован',
-      contractUrl: `/contracts/${user.id}/${contractFileName}`,
+      contractUrl: contractUrl,
     });
   } catch (error) {
     console.error('Ошибка при генерации контракта:', error);

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { uploadFile } from '@/lib/s3';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -70,21 +69,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Создаем уникальное имя файла
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `artwork_${uuidv4()}.${fileExtension}`;
-
-    // Создаем директорию для хранения произведений, если она не существует
-    const artworksDir = join(process.cwd(), 'public', 'artworks');
-    const userArtworksDir = join(artworksDir, user.id);
-
     try {
-      // Сохраняем файл
-      await mkdir(userArtworksDir, { recursive: true });
-      await writeFile(
-        join(userArtworksDir, fileName),
-        Buffer.from(await file.arrayBuffer())
-      );
+      // Создаем уникальное имя файла
+      const fileExtension = file.name.split('.').pop() || '';
+      const fileName = `${uuidv4()}.${fileExtension}`;
+
+      // Определяем путь в S3
+      const s3Key = `artworks/${user.id}/${fileName}`;
+
+      // Загружаем файл в S3
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      const fileUrl = await uploadFile(s3Key, fileBuffer, file.type);
 
       // Преобразуем цену из строки в Decimal
       const numericPrice =
@@ -95,7 +90,7 @@ export async function POST(request: Request) {
         data: {
           title,
           description,
-          filePath: `/artworks/${user.id}/${fileName}`,
+          filePath: fileUrl,
           authorId: user.id,
         },
       });
